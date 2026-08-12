@@ -15,6 +15,5 @@ coverage/
 *.log
 .DS_Store
 
-# Local agent and planning files
-/AGENTS.md
-/WORK_PLAN.md
+# Private planning, roadmap, agent, and internal documents are tracked.
+# .gitattributes excludes them from public exports.

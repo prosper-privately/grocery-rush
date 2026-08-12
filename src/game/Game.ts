@@ -88,6 +88,15 @@ export class Game {
     { name: 'Auntie June', request: 'A surprise dinner has one missing ingredient list and no time to spare.', payoff: 'Auntie June saved the surprise dinner without missing a beat.' },
     { name: 'Sam the Baker', request: 'Tomorrow’s first batch starts at dawn, and the pantry is bare.', payoff: 'Sam’s ovens were warm before sunrise.' },
   ];
+  private readonly resetMapPrompts = [
+    'You left work. Now leave the screen.',
+    'This game is a break. Your body needs one too.',
+    'Your next side quest starts away from the desk.',
+    'You moved in-game. Now move IRL.',
+    'Unlock a break that gets you off-screen.',
+    'Step away. Respawn with clarity.',
+  ] as const;
+  private readonly resetMapPrompt = this.resetMapPrompts[Math.floor(Math.random() * this.resetMapPrompts.length)];
   private readonly orderNumber: number;
   private readonly shoppingListSize: number;
   private readonly collisionTolerance = 8;
@@ -104,7 +113,6 @@ export class Game {
   private shoppingListCounter: HTMLDivElement | null = null;
   private readonly roundDurationMs: number;
   private checkoutReady = false;
-  private checkoutArmed = false;
   private checkoutZone: HTMLDivElement | null = null;
   private roundRemainingMs = 0;
   private gamePhase: GamePhase = 'ready';
@@ -189,6 +197,10 @@ export class Game {
   constructor(container: HTMLElement, config: GameConfig = defaultConfig) {
     this.container = container;
     this.config = config;
+    const persistentResetMapPrompt = document.querySelector<HTMLElement>('.play-reset-map-link .reset-map-prompt');
+    if (persistentResetMapPrompt) {
+      persistentResetMapPrompt.textContent = this.resetMapPrompt;
+    }
     this.orderNumber = this.readStoredInteger('grocery-rush-order', 1, 1, this.customers.length);
     this.comboWindowMs = Math.max(3_000, 4_000 - (this.orderNumber - 1) * 200);
     this.shoppingListSize = Math.min(8, 4 + this.orderNumber);
@@ -226,7 +238,6 @@ export class Game {
     this.container.innerHTML = '';
     this.shoppingListCollectedCount = 0;
     this.checkoutReady = false;
-    this.checkoutArmed = false;
     this.checkoutZone = null;
     this.container.dataset.objective = 'items';
     this.score = 0;
@@ -488,7 +499,7 @@ export class Game {
     this.fallStartX = this.characterX;
     this.character.dataset.fallOriginX = String(this.fallStartX);
     const fellFromLeft = this.characterX <= this.getHorizontalBounds(this.currentShelfIndex).minX;
-    this.fallTargetX = fellFromLeft ? 2.5 : this.gridWidth - 3;
+    this.fallTargetX = fellFromLeft ? 1 : this.gridWidth - 3;
     this.targetShelfIndex = this.floorShelfIndex;
     this.fallCount += 1;
     this.container.dataset.falls = String(this.fallCount);
@@ -670,15 +681,14 @@ export class Game {
       panel.appendChild(resumeButton);
     } else {
       const won = phase === 'won';
+      const shiftComplete = won && this.isFinalOrder;
       const missedCheckout = !won && this.shoppingListCollectedCount >= this.shoppingListSize;
-      const rating = this.getRoundRating();
       const lossStory = missedCheckout
         ? `Order packed, but you didn't reach checkout before closing.`
         : `You found ${this.shoppingListCollectedCount} of ${this.shoppingListSize} items. Try a faster route.`;
       panel.innerHTML = `
-        <p class="eyebrow">${won ? 'ORDER COMPLETE' : 'STORE CLOSED'}</p>
-        <h2 class="round-title">${won ? 'Packed with time to spare!' : missedCheckout ? 'Checkout closed without the order.' : 'The last bell rang.'}</h2>
-        ${won ? `<div class="rating-badge" aria-label="Checkout rating ${rating}">${rating}</div>` : ''}
+        <p class="eyebrow">${shiftComplete ? 'SHIFT COMPLETE' : won ? 'ORDER COMPLETE' : 'STORE CLOSED'}</p>
+        <h2 class="round-title">${shiftComplete ? 'All six orders delivered!' : won ? 'Packed with time to spare!' : missedCheckout ? 'Checkout closed without the order.' : 'The last bell rang.'}</h2>
         <p class="round-story">${won ? `You packed order ${this.orderNumber} for ${this.score} points.` : lossStory}</p>
         ${!won ? `<p class="loss-score">RUN SCORE · ${this.formatScore(this.score)}</p>` : ''}
         ${won ? `<p class="customer-payoff">${this.customer.payoff}</p>` : ''}
@@ -689,14 +699,21 @@ export class Game {
             <span class="checkout-mistakes">MISTAKES · ${this.hazardHitCount + this.stockCartHitCount + this.fallCount}</span>
           </div>
         ` : ''}
-        ${won ? `<p class="shift-total">SHIFT SCORE · ${this.formatScore(this.shiftScore)}</p>` : ''}
-        ${won && this.isFinalOrder ? `<p class="shift-record">BEST SHIFT · ${this.formatScore(this.bestShiftScore)}</p>` : ''}
+        ${won && !shiftComplete ? `<p class="shift-total">SHIFT SCORE · ${this.formatScore(this.shiftScore)}</p>` : ''}
+        ${shiftComplete ? `
+          <div class="campaign-finale" aria-label="Six-order shift complete">
+            <strong>6/6 ORDERS DELIVERED</strong>
+            <span class="campaign-final-score">FINAL SHIFT · ${this.formatScore(this.shiftScore)}</span>
+            <span class="campaign-best-score">BEST SHIFT · ${this.formatScore(this.bestShiftScore)}</span>
+            <small class="campaign-restart-note">Another shift starts at order 1. Your best scores stay saved.</small>
+          </div>
+        ` : ''}
         <p class="run-record">ORDER ${this.orderNumber} BEST ${this.bestScore}</p>
       `;
       const restartButton = document.createElement('button');
       restartButton.type = 'button';
       restartButton.className = 'restart-game-button';
-      const restartLabel = won ? (this.isFinalOrder ? 'Start a new shift' : 'Next order') : 'Try again';
+      const restartLabel = won ? (this.isFinalOrder ? 'Start another 6-order shift' : 'Next order') : 'Try again';
       restartButton.innerHTML = `${restartLabel} <span class="button-key">Space</span>`;
       restartButton.setAttribute('aria-keyshortcuts', 'Space');
       restartButton.addEventListener('click', () => {
@@ -710,6 +727,26 @@ export class Game {
         window.location.reload();
       });
       panel.appendChild(restartButton);
+
+      if (won) {
+        const shareButton = document.createElement('button');
+        shareButton.type = 'button';
+        shareButton.className = 'share-score-button';
+        shareButton.textContent = 'Share score';
+        shareButton.addEventListener('click', () => void this.shareScore(shareButton));
+        panel.appendChild(shareButton);
+      }
+
+      const resetMapLink = document.createElement('a');
+      resetMapLink.className = 'result-reset-map-link';
+      resetMapLink.href = 'https://www.prosperprivately.com/moveoncue?utm_source=grocery-rush';
+      resetMapLink.target = '_blank';
+      resetMapLink.rel = 'noopener';
+      const resetMapPrompt = document.createElement('span');
+      resetMapPrompt.className = 'result-reset-map-prompt';
+      resetMapPrompt.textContent = this.resetMapPrompt;
+      resetMapLink.append(resetMapPrompt);
+      panel.appendChild(resetMapLink);
     }
 
     overlay.appendChild(panel);
@@ -717,13 +754,32 @@ export class Game {
     this.roundOverlay = overlay;
   }
 
-  private getRoundRating(): string {
-    const timeRatio = this.roundDurationMs > 0 ? this.roundRemainingMs / this.roundDurationMs : 0;
-    if (timeRatio >= 0.6) return 'S RUSH';
-    if (timeRatio >= 0.35) return 'A RUSH';
-    if (timeRatio >= 0.15) return 'B RUSH';
-    return 'C RUSH';
+  private async shareScore(button: HTMLButtonElement): Promise<void> {
+    const gameUrl = new URL('.', window.location.href).href;
+    const shareData: ShareData = {
+      title: 'Grocery Rush',
+      text: `I scored ${this.formatScore(this.score)} on order ${this.orderNumber} in Grocery Rush. Can you beat my route?`,
+      url: gameUrl,
+    };
+
+    try {
+      if (navigator.share) {
+        await navigator.share(shareData);
+        button.blur();
+        return;
+      }
+
+      await navigator.clipboard.writeText(`${shareData.text} ${shareData.url}`);
+      button.textContent = 'Score copied';
+      button.blur();
+    } catch (error) {
+      if (error instanceof DOMException && error.name === 'AbortError') {
+        return;
+      }
+      button.textContent = 'Share unavailable';
+    }
   }
+
 
   private startRound(): void {
     if (this.gamePhase !== 'ready') {
@@ -1176,11 +1232,13 @@ export class Game {
       this.canCollectShoppingList = true;
     }
 
-    if (this.gamePhase === 'playing' && this.canCollectShoppingList && !this.isFalling) {
-      this.handleShoppingListCollection();
-      this.handleBonusCouponCollection();
-      this.handleAisleHazards();
+    if (this.gamePhase === 'playing' && !this.isFalling) {
       this.handleCheckoutCompletion();
+      if (this.canCollectShoppingList) {
+        this.handleShoppingListCollection();
+        this.handleBonusCouponCollection();
+        this.handleAisleHazards();
+      }
     }
   }
 
@@ -1532,7 +1590,6 @@ export class Game {
     }
 
     this.checkoutReady = true;
-    this.checkoutArmed = false;
     this.container.dataset.objective = 'checkout';
     if (this.shoppingListCounter) {
       this.shoppingListCounter.textContent = 'CHECKOUT';
@@ -1571,10 +1628,6 @@ export class Game {
       2
     );
     if (!overlapsCheckout) {
-      this.checkoutArmed = true;
-      return;
-    }
-    if (!this.checkoutArmed) {
       return;
     }
 

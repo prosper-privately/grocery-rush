@@ -278,6 +278,26 @@ test.describe('Grocery Store Runner', () => {
     expect(errors).toEqual([]);
   });
 
+  test('keeps the free Screen-Day Reset Map within reach during play', async ({ page }) => {
+    await page.addInitScript(() => {
+      Math.random = () => 0;
+    });
+    const { errors, consoleErrors } = await gotoGamePage(page);
+    const mapLink = page.locator('.play-reset-map-link');
+
+    await expect(mapLink).toBeVisible();
+    await expect(mapLink.locator('.reset-map-prompt')).toHaveText('You left work. Now leave the screen.');
+    await expect(mapLink).not.toContainText(/free reset map/i);
+    await expect(mapLink.locator('strong')).toHaveCount(0);
+    await expect(mapLink).toHaveAttribute('href', 'https://www.prosperprivately.com/moveoncue?utm_source=grocery-rush');
+    await page.locator('.start-game-button').click();
+    await expect(mapLink).toBeVisible();
+
+    expect(errors).toEqual([]);
+    expect(consoleErrors).toEqual([]);
+  });
+
+
   test('renders shelf products as separate scene layers', async ({ page }) => {
     const { errors, consoleErrors } = await gotoGamePage(page);
 
@@ -463,6 +483,61 @@ test.describe('Grocery Store Runner', () => {
     await expect(page.locator('.shopping-list-product')).toHaveCount(8);
     await expect(page.locator('.round-timer')).toHaveText('0:30');
 
+    expect(errors).toEqual([]);
+    expect(consoleErrors).toEqual([]);
+  });
+
+  test('celebrates all six delivered orders and explains the next shift', async ({ page }) => {
+    await page.addInitScript(() => {
+      Math.random = () => 0;
+      if (window.sessionStorage.getItem('grocery-rush-finale-seeded')) {
+        return;
+      }
+      window.sessionStorage.setItem('grocery-rush-finale-seeded', '1');
+      window.localStorage.setItem('grocery-rush-order', '6');
+      window.localStorage.setItem('grocery-rush-shift-score', '50000');
+      window.localStorage.setItem('grocery-rush-credited-order', '5');
+      window.localStorage.setItem('grocery-rush-best-shift', '48000');
+    });
+    const { errors, consoleErrors } = await gotoGamePage(page);
+    const character = page.locator('.character').first();
+    await page.locator('.start-game-button').click();
+
+    for (const entry of await resolveShoppingListEntries(page)) {
+      const listSelector = `.shopping-list-item.shopping-list-product[data-product-id="${entry.productId}"]`;
+      if (((await page.locator(listSelector).getAttribute('class')) ?? '').includes('is-collected')) {
+        continue;
+      }
+      await moveCharacterToShoppingListProduct(
+        page,
+        character,
+        entry.productKind,
+        entry.shelfIndex,
+        entry.productId
+      );
+      await doShoppingListCollection(page, listSelector);
+    }
+
+    await moveCharacterToRow(page, character, 5);
+    await moveCharacterToX(page, character, 20);
+
+    const finale = page.locator('.round-overlay[data-phase="won"]');
+    await expect(finale).toBeVisible();
+    await expect(finale.locator('.eyebrow')).toHaveText('SHIFT COMPLETE');
+    await expect(finale.locator('.round-title')).toContainText(/all six orders delivered/i);
+    await expect(finale.locator('.campaign-finale')).toContainText(/6\/6 orders delivered/i);
+    await expect(finale.locator('.campaign-final-score')).toContainText(/final shift/i);
+    await expect(finale.locator('.campaign-best-score')).toContainText(/best shift/i);
+    await expect(finale.locator('.campaign-restart-note')).toContainText(/order 1.*best scores/i);
+    await expect(finale.locator('.restart-game-button')).toContainText(/start another 6-order shift/i);
+    const completedBestShift = Number(await page.evaluate(() => localStorage.getItem('grocery-rush-best-shift')));
+    expect(completedBestShift).toBeGreaterThan(50000);
+
+    await finale.locator('.restart-game-button').click();
+    const nextBriefing = page.locator('.round-overlay[data-phase="ready"]');
+    await expect(nextBriefing).toContainText(/order 1/i);
+    await expect(nextBriefing.locator('.shift-total')).toContainText(/0/);
+    await expect(nextBriefing.locator('.shift-record')).toContainText(completedBestShift.toLocaleString('en-US'));
     expect(errors).toEqual([]);
     expect(consoleErrors).toEqual([]);
   });
@@ -927,7 +1002,7 @@ test.describe('Grocery Store Runner', () => {
     await page.waitForTimeout(100);
     const fallingPosition = await getCharacterPosition(character);
     const fallingTop = fallingPosition.top;
-    expect(fallingPosition.left).toBeGreaterThan(50);
+    expect(fallingPosition.left).toBeGreaterThan(leftFallOrigin);
     expect(fallingTop).toBeGreaterThan(upperShelfTop + 5);
     expect(fallingTop).toBeLessThan(floorTop - 5);
     await expect(character).not.toHaveClass(/is-falling/, { timeout: 1200 });
@@ -1044,6 +1119,12 @@ test.describe('Grocery Store Runner', () => {
   test('collects shopping-list items when reached and shows check marks', async ({ page }) => {
     await page.addInitScript(() => {
       Math.random = () => 0;
+      Object.defineProperty(navigator, 'share', {
+        configurable: true,
+        value: async (payload: ShareData) => {
+          (window as Window & { __groceryRushShare?: ShareData }).__groceryRushShare = payload;
+        },
+      });
     });
     const { errors, consoleErrors } = await gotoGamePage(page);
     const character = page.locator('.character').first();
@@ -1101,11 +1182,15 @@ test.describe('Grocery Store Runner', () => {
     await page.waitForTimeout(1_100);
     await expect(page.locator('.round-timer')).not.toHaveText(checkoutTimerBefore ?? '');
 
-    await moveCharacterToRow(page, character, 5);
-    await moveCharacterToX(page, character, 20);
+    await moveCharacterToX(page, character, 140);
+    await moveCharacterToRow(page, character, 4);
+    await moveCharacterToX(page, character, 70);
+    await page.keyboard.down('ArrowLeft');
+    await expect(character).toHaveClass(/is-falling/, { timeout: 1000 });
+    await page.keyboard.up('ArrowLeft');
     await expect(victory).toBeVisible();
     await expect(victory).toContainText(/order|packed|complete/i);
-    await expect(victory.locator('.rating-badge')).toBeVisible();
+    await expect(victory.locator('.rating-badge')).toHaveCount(0);
     await expect(victory.locator('.customer-payoff')).not.toBeEmpty();
     const checkoutBreakdown = victory.locator('.checkout-breakdown');
     await expect(checkoutBreakdown).toBeVisible();
@@ -1118,6 +1203,38 @@ test.describe('Grocery Store Runner', () => {
     expect(storedShiftScore).toBe(roundScore);
     expect(storedOrderBest).toBe(roundScore);
     await expect(victory.locator('.run-record')).toContainText(`ORDER 1 BEST ${roundScore}`);
+    await expect(victory.locator('.result-reset-map-link')).toBeVisible();
+    await expect(victory.locator('.result-reset-map-link')).not.toContainText(/free reset map/i);
+    await expect(victory.locator('.result-reset-map-link')).toHaveAttribute('href', 'https://www.prosperprivately.com/moveoncue?utm_source=grocery-rush');
+    const shareButton = victory.locator('.share-score-button');
+    await expect(shareButton).toBeVisible();
+    await shareButton.click();
+    const sharePayload = await page.evaluate(() => (window as Window & { __groceryRushShare?: ShareData }).__groceryRushShare);
+    expect(sharePayload?.title).toBe('Grocery Rush');
+    expect(sharePayload?.text).toContain(`I scored ${roundScore.toLocaleString('en-US')}`);
+    expect(sharePayload?.url).toBe(new URL('.', page.url()).href);
+    await expect(shareButton).not.toBeFocused();
+
+    await page.evaluate(() => {
+      Object.defineProperty(navigator, 'share', {
+        configurable: true,
+        value: undefined,
+      });
+      Object.defineProperty(navigator, 'clipboard', {
+        configurable: true,
+        value: {
+          writeText: async (text: string) => {
+            (window as Window & { __groceryRushCopied?: string }).__groceryRushCopied = text;
+          },
+        },
+      });
+    });
+    await shareButton.click();
+    const copiedShare = await page.evaluate(() => (window as Window & { __groceryRushCopied?: string }).__groceryRushCopied);
+    expect(copiedShare).toContain(`I scored ${roundScore.toLocaleString('en-US')}`);
+    expect(copiedShare).toContain(new URL('.', page.url()).href);
+    await expect(shareButton).toHaveText('Score copied');
+    await expect(shareButton).not.toBeFocused();
     await expect(victory.locator('.restart-game-button')).toBeVisible();
     await page.keyboard.press('Space');
     await expect(page.locator('.round-overlay[data-phase="ready"]')).toBeVisible();
@@ -1183,6 +1300,10 @@ test.describe('Grocery Store Runner', () => {
     await expect(loss).toBeVisible();
     await expect(loss.locator('.round-story')).toContainText(/didn.t reach checkout|missed checkout/i);
     await expect(loss.locator('.loss-score')).toContainText(`RUN SCORE · ${earnedScore.toLocaleString('en-US')}`);
+    await expect(loss.locator('.result-reset-map-link')).toBeVisible();
+    await expect(loss.locator('.result-reset-map-link')).not.toContainText(/free reset map/i);
+    await expect(loss.locator('.result-reset-map-link')).toHaveAttribute('href', 'https://www.prosperprivately.com/moveoncue?utm_source=grocery-rush');
+    await expect(loss.locator('.share-score-button')).toHaveCount(0);
     expect(errors).toEqual([]);
     expect(consoleErrors).toEqual([]);
   });
