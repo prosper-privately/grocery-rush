@@ -1,0 +1,20 @@
+# Installed dependencies
+node_modules/
+
+# Generated build and test output
+dist/
+test-results/
+playwright-report/
+blob-report/
+coverage/
+
+# Local configuration and logs
+.env
+.env.*
+!.env.example
+*.log
+.DS_Store
+
+# Local agent and planning files
+/AGENTS.md
+/WORK_PLAN.md

@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Grocery Rush</title>
+  <script type="module" src="/src/main.ts"></script>
+</head>
+<body>
+  <main class="game-shell">
+    <div class="brand-strip" aria-label="Marty's Market">
+      <span class="brand-mark">M</span>
+      <span>Marty's Market</span>
+      <span class="brand-tagline">Fast feet. Fresh food.</span>
+      <div class="utility-controls" aria-label="Game controls">
+        <button id="sound-game-button" class="utility-button" type="button" aria-pressed="false">Sound on</button>
+        <button id="pause-game-button" class="utility-button" type="button" disabled>Pause</button>
+      </div>
+    </div>
+    <section class="game-stage" aria-label="Grocery Rush game">
+      <div id="game-container"></div>
+    </section>
+    <p class="footer-note">Race the clock. Build your best route.</p>
+  </main>
+</body>
+</html>

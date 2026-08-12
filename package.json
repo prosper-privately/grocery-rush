@@ -1,0 +1,30 @@
+{
+  "name": "grocery-rush",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "A mobile-friendly grocery-store arcade game",
+  "scripts": {
+    "build": "tsc && vite build",
+    "dev": "vite",
+    "start": "vite preview --host 127.0.0.1 --port 9515",
+    "test": "npm run test:e2e",
+    "test:e2e": "npm run build && playwright test",
+    "typecheck": "tsc --noEmit"
+  },
+  "keywords": [
+    "game",
+    "typescript",
+    "mobile"
+  ],
+  "license": "MIT",
+  "engines": {
+    "node": "^20.19.0 || >=22.12.0"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.62.1",
+    "@types/node": "^20.19.43",
+    "typescript": "^5.9.3",
+    "vite": "^8.2.1"
+  }
+}
