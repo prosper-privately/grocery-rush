@@ -19,10 +19,10 @@ Every successful delivery advances the six-order closing shift. Collect the full
 - Playful falls from the upper shelf ends
 - Twenty separately rendered grocery sprites
 - Fair orders containing distinct product types
-- Timed rounds, route-combo scoring, a visible combo window, and checkout ratings
+- Timed rounds, route-combo scoring, a visible combo window, and checkout breakdowns
 - A rechargeable shelf boost and optional coupon detours
 - Avoidable late-shift spills and telegraphed stock-cart traffic
-- Six customer stories and a complete shift ending
+- Six customer stories with distinct pixel-art portraits and a complete shift ending
 - Keyboard, pointer, and swipe controls
 - Responsive desktop and portrait-phone layouts
 - Pause/resume, persistent sound setting, and reduced-motion support

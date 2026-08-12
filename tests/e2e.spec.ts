@@ -297,6 +297,30 @@ test.describe('Grocery Store Runner', () => {
     expect(consoleErrors).toEqual([]);
   });
 
+  test('keeps the rotating reset-map line readable during phone play', async ({ page }) => {
+    await page.setViewportSize({ width: 360, height: 640 });
+    await page.addInitScript(() => {
+      Math.random = () => 0;
+    });
+    const { errors, consoleErrors } = await gotoGamePage(page);
+    await page.locator('.start-game-button').click();
+
+    const mapLink = page.locator('.play-reset-map-link');
+    const mapPrompt = mapLink.locator('.reset-map-prompt');
+    await expect(mapLink).toBeVisible();
+    await expect(mapPrompt).toBeVisible();
+    await expect(mapPrompt).toHaveText('You left work. Now leave the screen.');
+    const linkBox = await mapLink.boundingBox();
+    expect(linkBox).not.toBeNull();
+    if (linkBox) {
+      expect(linkBox.x).toBeGreaterThanOrEqual(0);
+      expect(linkBox.x + linkBox.width).toBeLessThanOrEqual(360);
+    }
+
+    expect(errors).toEqual([]);
+    expect(consoleErrors).toEqual([]);
+  });
+
 
   test('renders shelf products as separate scene layers', async ({ page }) => {
     const { errors, consoleErrors } = await gotoGamePage(page);
@@ -483,6 +507,41 @@ test.describe('Grocery Store Runner', () => {
     await expect(page.locator('.shopping-list-product')).toHaveCount(8);
     await expect(page.locator('.round-timer')).toHaveText('0:30');
 
+    expect(errors).toEqual([]);
+    expect(consoleErrors).toEqual([]);
+  });
+
+  test('shows a distinct portrait for each of the six customers', async ({ page }) => {
+    const { errors, consoleErrors } = await gotoGamePage(page);
+    const expectedCustomers = [
+      { name: 'Nana Bea', file: 'customer-01-nana-bea.png' },
+      { name: 'Coach Rivera', file: 'customer-02-coach-rivera.png' },
+      { name: 'Mina & Mochi', file: 'customer-03-mina-and-mochi.png' },
+      { name: 'Night-Shift Niko', file: 'customer-04-night-shift-niko.png' },
+      { name: 'Auntie June', file: 'customer-05-auntie-june.png' },
+      { name: 'Sam the Baker', file: 'customer-06-sam-the-baker.png' },
+    ];
+    const avatarUrls = new Set<string>();
+
+    for (let index = 0; index < expectedCustomers.length; index++) {
+      const expectedCustomer = expectedCustomers[index];
+      await page.evaluate((order) => localStorage.setItem('grocery-rush-order', String(order)), index + 1);
+      await page.reload({ waitUntil: 'load' });
+
+      const briefing = page.locator('.round-overlay[data-phase="ready"]');
+      const avatar = briefing.locator('.customer-avatar');
+      await expect(briefing.locator('.customer-name')).toHaveText(expectedCustomer.name);
+      await expect(avatar).toBeVisible();
+      await expect(avatar).toHaveAttribute('alt', `${expectedCustomer.name} avatar`);
+      const avatarUrl = await avatar.evaluate((image: HTMLImageElement) => image.currentSrc);
+      expect(avatarUrl).toContain(`/customer-avatars/${expectedCustomer.file}`);
+      const avatarResponse = await page.request.get(avatarUrl);
+      expect(avatarResponse.ok()).toBe(true);
+      expect(avatarResponse.headers()['content-type']).toContain('image/png');
+      avatarUrls.add(avatarUrl);
+    }
+
+    expect(avatarUrls.size).toBe(6);
     expect(errors).toEqual([]);
     expect(consoleErrors).toEqual([]);
   });

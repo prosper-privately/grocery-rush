@@ -23,6 +23,7 @@ type ShelfProductConfig = {
 };
 type CustomerProfile = {
   name: string;
+  avatar: string;
   request: string;
   payoff: string;
 };
@@ -81,12 +82,12 @@ export class Game {
 
   private readonly allShelfProductKinds = this.getShelfProductKinds();
   private readonly customers: readonly CustomerProfile[] = [
-    { name: 'Nana Bea', request: 'Her grandkids arrive at closing, and movie night still needs snacks.', payoff: 'Nana Bea made it home before the opening credits.' },
-    { name: 'Coach Rivera', request: 'The team bus is pulling in, but the post-game spread is still empty.', payoff: 'Coach Rivera had the table ready when the team arrived.' },
-    { name: 'Mina & Mochi', request: 'Mina promised her cat a tiny birthday picnic after work.', payoff: 'Mochi approved the picnic—and demanded seconds.' },
-    { name: 'Night-Shift Niko', request: 'Niko needs a break-room rescue before the overnight crew clocks in.', payoff: 'The night crew cheered when Niko rolled in with the order.' },
-    { name: 'Auntie June', request: 'A surprise dinner has one missing ingredient list and no time to spare.', payoff: 'Auntie June saved the surprise dinner without missing a beat.' },
-    { name: 'Sam the Baker', request: 'Tomorrow’s first batch starts at dawn, and the pantry is bare.', payoff: 'Sam’s ovens were warm before sunrise.' },
+    { name: 'Nana Bea', avatar: 'customer-01-nana-bea.png', request: 'Her grandkids arrive at closing, and movie night still needs snacks.', payoff: 'Nana Bea made it home before the opening credits.' },
+    { name: 'Coach Rivera', avatar: 'customer-02-coach-rivera.png', request: 'The team bus is pulling in, but the post-game spread is still empty.', payoff: 'Coach Rivera had the table ready when the team arrived.' },
+    { name: 'Mina & Mochi', avatar: 'customer-03-mina-and-mochi.png', request: 'Mina promised her cat a tiny birthday picnic after work.', payoff: 'Mochi approved the picnic—and demanded seconds.' },
+    { name: 'Night-Shift Niko', avatar: 'customer-04-night-shift-niko.png', request: 'Niko needs a break-room rescue before the overnight crew clocks in.', payoff: 'The night crew cheered when Niko rolled in with the order.' },
+    { name: 'Auntie June', avatar: 'customer-05-auntie-june.png', request: 'A surprise dinner has one missing ingredient list and no time to spare.', payoff: 'Auntie June saved the surprise dinner without missing a beat.' },
+    { name: 'Sam the Baker', avatar: 'customer-06-sam-the-baker.png', request: 'Tomorrow’s first batch starts at dawn, and the pantry is bare.', payoff: 'Sam’s ovens were warm before sunrise.' },
   ];
   private readonly resetMapPrompts = [
     'You left work. Now leave the screen.',
@@ -645,6 +646,7 @@ export class Game {
         <h1 class="game-title">Grocery Rush</h1>
         <div class="customer-card">
           <span class="customer-label">CUSTOMER</span>
+          <img class="customer-avatar" src="./customer-avatars/${this.customer.avatar}" alt="${this.customer.name} avatar">
           <strong class="customer-name">${this.customer.name}</strong>
           <span class="customer-request">${this.customer.request}</span>
         </div>
