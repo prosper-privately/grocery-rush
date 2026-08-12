@@ -320,7 +320,37 @@ test.describe('Grocery Store Runner', () => {
     expect(errors).toEqual([]);
     expect(consoleErrors).toEqual([]);
   });
+  test('uses fifty grocery products across twenty ten-type level pools', async ({ page }) => {
+    const campaignProductKinds = new Set<string>();
 
+    for (let level = 1; level <= 20; level++) {
+      await page.addInitScript((orderNumber) => {
+        window.localStorage.setItem('grocery-rush-order', String(orderNumber));
+      }, level);
+      await page.goto('/');
+
+      const shelfProducts = page.locator('.shelf-products .shelf-product');
+      await expect(shelfProducts).toHaveCount(20);
+      const productKinds = await shelfProducts.evaluateAll((nodes) =>
+        nodes.map((node) => node.getAttribute('data-product-kind') ?? '')
+      );
+      const levelKinds = new Set(productKinds);
+
+      expect(levelKinds.size).toBe(10);
+      expect(productKinds.every((kind) => kind.length > 0)).toBe(true);
+      levelKinds.forEach((kind) => campaignProductKinds.add(kind));
+
+      const brokenSprites = await shelfProducts.evaluateAll((nodes) =>
+        nodes.filter((node) => {
+          const image = getComputedStyle(node).backgroundImage;
+          return !image.includes('/products/product-') || image === 'none';
+        }).length
+      );
+      expect(brokenSprites).toBe(0);
+    }
+
+    expect(campaignProductKinds.size).toBe(50);
+  });
 
   test('renders shelf products as separate scene layers', async ({ page }) => {
     const { errors, consoleErrors } = await gotoGamePage(page);
@@ -495,14 +525,14 @@ test.describe('Grocery Store Runner', () => {
     expect(consoleErrors).toEqual([]);
   });
 
-  test('caps the campaign at six customers and marks the final order', async ({ page }) => {
+  test('caps the campaign at twenty customers and marks the final order', async ({ page }) => {
     await page.addInitScript(() => {
       window.localStorage.setItem('grocery-rush-order', '99');
     });
     const { errors, consoleErrors } = await gotoGamePage(page);
     const briefing = page.locator('.round-overlay[data-phase="ready"]');
 
-    await expect(briefing).toContainText(/order 6/i);
+    await expect(briefing).toContainText(/order 20/i);
     await expect(briefing.locator('.shift-progress')).toContainText(/final order/i);
     await expect(page.locator('.shopping-list-product')).toHaveCount(8);
     await expect(page.locator('.round-timer')).toHaveText('0:30');
@@ -511,7 +541,7 @@ test.describe('Grocery Store Runner', () => {
     expect(consoleErrors).toEqual([]);
   });
 
-  test('shows a distinct portrait for each of the six customers', async ({ page }) => {
+  test('shows a distinct story and portrait for each of the twenty customers', async ({ page }) => {
     const { errors, consoleErrors } = await gotoGamePage(page);
     const expectedCustomers = [
       { name: 'Nana Bea', file: 'customer-01-nana-bea.png' },
@@ -520,8 +550,23 @@ test.describe('Grocery Store Runner', () => {
       { name: 'Night-Shift Niko', file: 'customer-04-night-shift-niko.png' },
       { name: 'Auntie June', file: 'customer-05-auntie-june.png' },
       { name: 'Sam the Baker', file: 'customer-06-sam-the-baker.png' },
+      { name: 'Gus the Gardener', file: 'customer-07-gus-the-gardener.png' },
+      { name: 'Priya the Paramedic', file: 'customer-08-priya-the-paramedic.png' },
+      { name: 'Theo & Tumble', file: 'customer-09-theo-and-tumble.png' },
+      { name: 'Captain Marisol', file: 'customer-10-captain-marisol.png' },
+      { name: 'Mr. Okafor', file: 'customer-11-mr-okafor.png' },
+      { name: 'DJ Dot', file: 'customer-12-dj-dot.png' },
+      { name: 'Ranger Rowan', file: 'customer-13-ranger-rowan.png' },
+      { name: 'Tía Sol', file: 'customer-14-tia-sol.png' },
+      { name: 'Jojo the Mechanic', file: 'customer-15-jojo-the-mechanic.png' },
+      { name: 'Librarian Lou', file: 'customer-16-librarian-lou.png' },
+      { name: 'Arlo the Astronomer', file: 'customer-17-arlo-the-astronomer.png' },
+      { name: 'Mei & Pippin', file: 'customer-18-mei-and-pippin.png' },
+      { name: 'Firefighter Fran', file: 'customer-19-firefighter-fran.png' },
+      { name: 'Mayor Mabel', file: 'customer-20-mayor-mabel.png' },
     ];
     const avatarUrls = new Set<string>();
+    const customerRequests = new Set<string>();
 
     for (let index = 0; index < expectedCustomers.length; index++) {
       const expectedCustomer = expectedCustomers[index];
@@ -531,6 +576,9 @@ test.describe('Grocery Store Runner', () => {
       const briefing = page.locator('.round-overlay[data-phase="ready"]');
       const avatar = briefing.locator('.customer-avatar');
       await expect(briefing.locator('.customer-name')).toHaveText(expectedCustomer.name);
+      const request = (await briefing.locator('.customer-request').textContent())?.trim() ?? '';
+      expect(request.length).toBeGreaterThan(30);
+      customerRequests.add(request);
       await expect(avatar).toBeVisible();
       await expect(avatar).toHaveAttribute('alt', `${expectedCustomer.name} avatar`);
       const avatarUrl = await avatar.evaluate((image: HTMLImageElement) => image.currentSrc);
@@ -541,22 +589,23 @@ test.describe('Grocery Store Runner', () => {
       avatarUrls.add(avatarUrl);
     }
 
-    expect(avatarUrls.size).toBe(6);
+    expect(avatarUrls.size).toBe(20);
+    expect(customerRequests.size).toBe(20);
     expect(errors).toEqual([]);
     expect(consoleErrors).toEqual([]);
   });
 
-  test('celebrates all six delivered orders and explains the next shift', async ({ page }) => {
+  test('celebrates all twenty delivered orders and explains the next shift', async ({ page }) => {
     await page.addInitScript(() => {
       Math.random = () => 0;
       if (window.sessionStorage.getItem('grocery-rush-finale-seeded')) {
         return;
       }
       window.sessionStorage.setItem('grocery-rush-finale-seeded', '1');
-      window.localStorage.setItem('grocery-rush-order', '6');
-      window.localStorage.setItem('grocery-rush-shift-score', '50000');
-      window.localStorage.setItem('grocery-rush-credited-order', '5');
-      window.localStorage.setItem('grocery-rush-best-shift', '48000');
+      window.localStorage.setItem('grocery-rush-order', '20');
+      window.localStorage.setItem('grocery-rush-shift-score', '180000');
+      window.localStorage.setItem('grocery-rush-credited-order', '19');
+      window.localStorage.setItem('grocery-rush-best-shift', '175000');
     });
     const { errors, consoleErrors } = await gotoGamePage(page);
     const character = page.locator('.character').first();
@@ -583,14 +632,14 @@ test.describe('Grocery Store Runner', () => {
     const finale = page.locator('.round-overlay[data-phase="won"]');
     await expect(finale).toBeVisible();
     await expect(finale.locator('.eyebrow')).toHaveText('SHIFT COMPLETE');
-    await expect(finale.locator('.round-title')).toContainText(/all six orders delivered/i);
-    await expect(finale.locator('.campaign-finale')).toContainText(/6\/6 orders delivered/i);
+    await expect(finale.locator('.round-title')).toContainText(/all twenty orders delivered/i);
+    await expect(finale.locator('.campaign-finale')).toContainText(/20\/20 orders delivered/i);
     await expect(finale.locator('.campaign-final-score')).toContainText(/final shift/i);
     await expect(finale.locator('.campaign-best-score')).toContainText(/best shift/i);
     await expect(finale.locator('.campaign-restart-note')).toContainText(/order 1.*best scores/i);
-    await expect(finale.locator('.restart-game-button')).toContainText(/start another 6-order shift/i);
+    await expect(finale.locator('.restart-game-button')).toContainText(/start another 20-order shift/i);
     const completedBestShift = Number(await page.evaluate(() => localStorage.getItem('grocery-rush-best-shift')));
-    expect(completedBestShift).toBeGreaterThan(50000);
+    expect(completedBestShift).toBeGreaterThan(180000);
 
     await finale.locator('.restart-game-button').click();
     const nextBriefing = page.locator('.round-overlay[data-phase="ready"]');

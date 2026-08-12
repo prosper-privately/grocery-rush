@@ -11,18 +11,18 @@ A compact arcade game set during the closing shift at Marty’s Market. Race alo
 - **Pause:** Pause button, `P`, or `Escape`
 - **Sound:** Use the Sound button in the header
 
-Every successful delivery advances the six-order closing shift. Collect the full list, then return to the marked checkout before time expires. Later orders request more items, allow less time, and introduce avoidable shelf spills. Order progress, cumulative score, records, best complete-shift score, and the sound preference are stored in the browser.
+Every successful delivery advances the twenty-order closing shift. Collect the full list, then return to the marked checkout before time expires. Later orders request more items, allow less time, and introduce avoidable shelf spills. Each customer brings a different ten-type grocery selection while order size remains capped at eight distinct items. Order progress, cumulative score, records, best complete-shift score, and the sound preference are stored in the browser.
 
 ## Game systems
 
 - Six shelf lanes with animated lane-to-lane movement
 - Playful falls from the upper shelf ends
-- Twenty separately rendered grocery sprites
+- Fifty separately rendered grocery sprites, including twenty fresh-produce items
 - Fair orders containing distinct product types
 - Timed rounds, route-combo scoring, a visible combo window, and checkout breakdowns
 - A rechargeable shelf boost and optional coupon detours
 - Avoidable late-shift spills and telegraphed stock-cart traffic
-- Six customer stories with distinct pixel-art portraits and a complete shift ending
+- Twenty customer stories with distinct pixel-art portraits and a complete shift ending
 - Keyboard, pointer, and swipe controls
 - Responsive desktop and portrait-phone layouts
 - Pause/resume, persistent sound setting, and reduced-motion support

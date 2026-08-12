@@ -2,17 +2,30 @@ import { defaultConfig, GameConfig } from '../types/GameConfig';
 
 type Direction = 'up' | 'down' | 'left' | 'right' | '';
 type GamePhase = 'ready' | 'playing' | 'paused' | 'won' | 'lost';
-type ShelfProductKind =
-  | 'product-01-can-red'
-  | 'product-02-can-blue'
-  | 'product-03-bottle-green'
-  | 'product-04-bottle-purple'
-  | 'product-05-crate-wood'
-  | 'product-06-crate-navy'
-  | 'product-07-carton-yellow'
-  | 'product-08-carton-pink'
-  | 'product-09-bottle-amber'
-  | 'product-10-can-gold';
+const levelProductPools = [
+  ['product-01-can-red', 'product-11-apple', 'product-12-bananas', 'product-13-carrot', 'product-14-broccoli', 'product-18-watermelon', 'product-31-bread', 'product-32-eggs', 'product-33-milk-jug', 'product-35-cheese'],
+  ['product-02-can-blue', 'product-15-tomatoes', 'product-16-eggplant', 'product-17-corn', 'product-20-pineapple', 'product-21-grapes', 'product-34-yogurt', 'product-36-pasta', 'product-38-rice-sack', 'product-42-jam'],
+  ['product-03-bottle-green', 'product-22-avocado', 'product-23-bell-pepper', 'product-24-onion', 'product-26-lemon', 'product-30-pear', 'product-37-chocolate', 'product-40-flour', 'product-44-honey-bear', 'product-47-butter'],
+  ['product-04-bottle-purple', 'product-19-strawberries', 'product-25-mushrooms', 'product-27-cherries', 'product-28-cauliflower', 'product-29-cucumber', 'product-39-frozen-peas', 'product-41-coffee', 'product-43-peanut-butter', 'product-48-cookie-roll'],
+  ['product-05-crate-wood', 'product-11-apple', 'product-15-tomatoes', 'product-20-pineapple', 'product-24-onion', 'product-30-pear', 'product-45-fish-tray', 'product-46-roast-chicken', 'product-49-ice-cream', 'product-50-dish-soap'],
+  ['product-06-crate-navy', 'product-12-bananas', 'product-16-eggplant', 'product-21-grapes', 'product-25-mushrooms', 'product-29-cucumber', 'product-31-bread', 'product-34-yogurt', 'product-38-rice-sack', 'product-45-fish-tray'],
+  ['product-07-carton-yellow', 'product-13-carrot', 'product-17-corn', 'product-22-avocado', 'product-26-lemon', 'product-27-cherries', 'product-32-eggs', 'product-36-pasta', 'product-42-jam', 'product-46-roast-chicken'],
+  ['product-08-carton-pink', 'product-14-broccoli', 'product-18-watermelon', 'product-23-bell-pepper', 'product-28-cauliflower', 'product-30-pear', 'product-33-milk-jug', 'product-37-chocolate', 'product-43-peanut-butter', 'product-49-ice-cream'],
+  ['product-09-bottle-amber', 'product-15-tomatoes', 'product-19-strawberries', 'product-20-pineapple', 'product-24-onion', 'product-29-cucumber', 'product-35-cheese', 'product-39-frozen-peas', 'product-44-honey-bear', 'product-50-dish-soap'],
+  ['product-10-can-gold', 'product-11-apple', 'product-12-bananas', 'product-21-grapes', 'product-25-mushrooms', 'product-27-cherries', 'product-40-flour', 'product-41-coffee', 'product-47-butter', 'product-48-cookie-roll'],
+  ['product-01-can-red', 'product-07-carton-yellow', 'product-11-apple', 'product-21-grapes', 'product-27-cherries', 'product-29-cucumber', 'product-31-bread', 'product-35-cheese', 'product-42-jam', 'product-48-cookie-roll'],
+  ['product-02-can-blue', 'product-09-bottle-amber', 'product-12-bananas', 'product-19-strawberries', 'product-26-lemon', 'product-30-pear', 'product-32-eggs', 'product-33-milk-jug', 'product-40-flour', 'product-47-butter'],
+  ['product-03-bottle-green', 'product-05-crate-wood', 'product-13-carrot', 'product-14-broccoli', 'product-15-tomatoes', 'product-16-eggplant', 'product-24-onion', 'product-36-pasta', 'product-38-rice-sack', 'product-46-roast-chicken'],
+  ['product-04-bottle-purple', 'product-10-can-gold', 'product-17-corn', 'product-18-watermelon', 'product-20-pineapple', 'product-22-avocado', 'product-23-bell-pepper', 'product-34-yogurt', 'product-44-honey-bear', 'product-49-ice-cream'],
+  ['product-06-crate-navy', 'product-08-carton-pink', 'product-25-mushrooms', 'product-28-cauliflower', 'product-29-cucumber', 'product-30-pear', 'product-31-bread', 'product-35-cheese', 'product-43-peanut-butter', 'product-45-fish-tray'],
+  ['product-01-can-red', 'product-09-bottle-amber', 'product-11-apple', 'product-12-bananas', 'product-21-grapes', 'product-27-cherries', 'product-37-chocolate', 'product-41-coffee', 'product-48-cookie-roll', 'product-49-ice-cream'],
+  ['product-02-can-blue', 'product-07-carton-yellow', 'product-13-carrot', 'product-16-eggplant', 'product-17-corn', 'product-23-bell-pepper', 'product-26-lemon', 'product-33-milk-jug', 'product-39-frozen-peas', 'product-42-jam'],
+  ['product-03-bottle-green', 'product-06-crate-navy', 'product-14-broccoli', 'product-15-tomatoes', 'product-22-avocado', 'product-24-onion', 'product-28-cauliflower', 'product-36-pasta', 'product-38-rice-sack', 'product-46-roast-chicken'],
+  ['product-04-bottle-purple', 'product-08-carton-pink', 'product-18-watermelon', 'product-19-strawberries', 'product-20-pineapple', 'product-25-mushrooms', 'product-29-cucumber', 'product-34-yogurt', 'product-44-honey-bear', 'product-50-dish-soap'],
+  ['product-05-crate-wood', 'product-10-can-gold', 'product-11-apple', 'product-13-carrot', 'product-21-grapes', 'product-27-cherries', 'product-30-pear', 'product-32-eggs', 'product-40-flour', 'product-47-butter'],
+] as const;
+
+type ShelfProductKind = (typeof levelProductPools)[number][number];
 type ShelfProductConfig = {
   shelfIndex: number;
   xCells: number;
@@ -80,7 +93,7 @@ export class Game {
     { shelfIndex: 5, xCells: 11.2, yOffsetCells: 0.01, widthCells: 1.06, heightCells: 0.62, kind: 'product-10-can-gold' },
   ];
 
-  private readonly allShelfProductKinds = this.getShelfProductKinds();
+  private readonly allShelfProductKinds: readonly ShelfProductKind[];
   private readonly customers: readonly CustomerProfile[] = [
     { name: 'Nana Bea', avatar: 'customer-01-nana-bea.png', request: 'Her grandkids arrive at closing, and movie night still needs snacks.', payoff: 'Nana Bea made it home before the opening credits.' },
     { name: 'Coach Rivera', avatar: 'customer-02-coach-rivera.png', request: 'The team bus is pulling in, but the post-game spread is still empty.', payoff: 'Coach Rivera had the table ready when the team arrived.' },
@@ -88,6 +101,20 @@ export class Game {
     { name: 'Night-Shift Niko', avatar: 'customer-04-night-shift-niko.png', request: 'Niko needs a break-room rescue before the overnight crew clocks in.', payoff: 'The night crew cheered when Niko rolled in with the order.' },
     { name: 'Auntie June', avatar: 'customer-05-auntie-june.png', request: 'A surprise dinner has one missing ingredient list and no time to spare.', payoff: 'Auntie June saved the surprise dinner without missing a beat.' },
     { name: 'Sam the Baker', avatar: 'customer-06-sam-the-baker.png', request: 'Tomorrow’s first batch starts at dawn, and the pantry is bare.', payoff: 'Sam’s ovens were warm before sunrise.' },
+    { name: 'Gus the Gardener', avatar: 'customer-07-gus-the-gardener.png', request: 'The neighborhood seed swap starts at sunrise, but Gus forgot the picnic table.', payoff: 'Gus fed every gardener before the first seed changed hands.' },
+    { name: 'Priya the Paramedic', avatar: 'customer-08-priya-the-paramedic.png', request: 'Priya promised a midnight potluck after the crew’s longest shift of the month.', payoff: 'Priya turned the quiet break room into a midnight feast.' },
+    { name: 'Theo & Tumble', avatar: 'customer-09-theo-and-tumble.png', request: 'Tumble finally passed puppy school, and Theo planned a backyard graduation party.', payoff: 'Tumble earned his diploma—and one extremely tiny party hat.' },
+    { name: 'Captain Marisol', avatar: 'customer-10-captain-marisol.png', request: 'The ferry crew just finished its final crossing and needs a dockside supper.', payoff: 'Captain Marisol toasted a smooth season beneath the harbor lights.' },
+    { name: 'Mr. Okafor', avatar: 'customer-11-mr-okafor.png', request: 'The chess club finals begin tonight, and Mr. Okafor forgot the players’ lucky snacks.', payoff: 'Mr. Okafor’s rook won the cup just before the last crumb vanished.' },
+    { name: 'DJ Dot', avatar: 'customer-12-dj-dot.png', request: 'Dot’s community-radio anniversary show needs enough snacks for one final dance set.', payoff: 'DJ Dot kept the whole block dancing past the closing theme.' },
+    { name: 'Ranger Rowan', avatar: 'customer-13-ranger-rowan.png', request: 'Rowan’s trail-cleanup crew is hiking back muddy, proud, and very hungry.', payoff: 'Ranger Rowan welcomed every volunteer with a warm trail-side meal.' },
+    { name: 'Tía Sol', avatar: 'customer-14-tia-sol.png', request: 'Her niece’s first dance recital ends soon, and the family celebration table is empty.', payoff: 'Tía Sol made the little dancer’s curtain call taste like sunshine.' },
+    { name: 'Jojo the Mechanic', avatar: 'customer-15-jojo-the-mechanic.png', request: 'Jojo’s crew revived the old ice-cream truck and promised everyone a victory lunch.', payoff: 'Jojo served lunch beside an engine that purred like a kitten.' },
+    { name: 'Librarian Lou', avatar: 'customer-16-librarian-lou.png', request: 'Tonight’s pajama story hour has dragons, blankets, and no snacks for the readers.', payoff: 'Lou’s tiny readers crunched along with every dragon in the tale.' },
+    { name: 'Arlo the Astronomer', avatar: 'customer-17-arlo-the-astronomer.png', request: 'A meteor shower peaks at midnight, and Arlo’s rooftop cocoa station is bare.', payoff: 'Arlo counted forty meteors over forty steaming cups.' },
+    { name: 'Mei & Pippin', avatar: 'customer-18-mei-and-pippin.png', request: 'Mei’s rabbit found the picnic basket, but the moonlight picnic never found its groceries.', payoff: 'Mei and Pippin shared the quietest, crunchiest picnic in the park.' },
+    { name: 'Firefighter Fran', avatar: 'customer-19-firefighter-fran.png', request: 'Fran promised the station a pancake breakfast after an all-night call.', payoff: 'Firefighter Fran flipped the first pancake as the sun came up.' },
+    { name: 'Mayor Mabel', avatar: 'customer-20-mayor-mabel.png', request: 'The town lantern festival is ready to glow, but its final supper table is empty.', payoff: 'Mayor Mabel lit the last lantern above a feast for the whole town.' },
   ];
   private readonly resetMapPrompts = [
     'You left work. Now leave the screen.',
@@ -160,16 +187,6 @@ export class Game {
   private musicPulseTimer: number | null = null;
   private musicPulseStep = 0;
 
-  private getShelfProductKinds(): ShelfProductKind[] {
-    const kinds = new Set<ShelfProductKind>();
-
-    this.shelfProducts.forEach((productConfig) => {
-      kinds.add(productConfig.kind);
-    });
-
-    return [...kinds];
-  }
-
   private get customer(): CustomerProfile {
     return this.customers[(this.orderNumber - 1) % this.customers.length];
   }
@@ -203,6 +220,7 @@ export class Game {
       persistentResetMapPrompt.textContent = this.resetMapPrompt;
     }
     this.orderNumber = this.readStoredInteger('grocery-rush-order', 1, 1, this.customers.length);
+    this.allShelfProductKinds = levelProductPools[this.orderNumber - 1];
     this.comboWindowMs = Math.max(3_000, 4_000 - (this.orderNumber - 1) * 200);
     this.shoppingListSize = Math.min(8, 4 + this.orderNumber);
     this.roundDurationMs = Math.max(30_000, 45_000 - (this.orderNumber - 1) * 3_000);
@@ -690,7 +708,7 @@ export class Game {
         : `You found ${this.shoppingListCollectedCount} of ${this.shoppingListSize} items. Try a faster route.`;
       panel.innerHTML = `
         <p class="eyebrow">${shiftComplete ? 'SHIFT COMPLETE' : won ? 'ORDER COMPLETE' : 'STORE CLOSED'}</p>
-        <h2 class="round-title">${shiftComplete ? 'All six orders delivered!' : won ? 'Packed with time to spare!' : missedCheckout ? 'Checkout closed without the order.' : 'The last bell rang.'}</h2>
+        <h2 class="round-title">${shiftComplete ? 'All twenty orders delivered!' : won ? 'Packed with time to spare!' : missedCheckout ? 'Checkout closed without the order.' : 'The last bell rang.'}</h2>
         <p class="round-story">${won ? `You packed order ${this.orderNumber} for ${this.score} points.` : lossStory}</p>
         ${!won ? `<p class="loss-score">RUN SCORE · ${this.formatScore(this.score)}</p>` : ''}
         ${won ? `<p class="customer-payoff">${this.customer.payoff}</p>` : ''}
@@ -703,8 +721,8 @@ export class Game {
         ` : ''}
         ${won && !shiftComplete ? `<p class="shift-total">SHIFT SCORE · ${this.formatScore(this.shiftScore)}</p>` : ''}
         ${shiftComplete ? `
-          <div class="campaign-finale" aria-label="Six-order shift complete">
-            <strong>6/6 ORDERS DELIVERED</strong>
+          <div class="campaign-finale" aria-label="${this.customers.length}-order shift complete">
+            <strong>${this.customers.length}/${this.customers.length} ORDERS DELIVERED</strong>
             <span class="campaign-final-score">FINAL SHIFT · ${this.formatScore(this.shiftScore)}</span>
             <span class="campaign-best-score">BEST SHIFT · ${this.formatScore(this.bestShiftScore)}</span>
             <small class="campaign-restart-note">Another shift starts at order 1. Your best scores stay saved.</small>
@@ -715,7 +733,7 @@ export class Game {
       const restartButton = document.createElement('button');
       restartButton.type = 'button';
       restartButton.className = 'restart-game-button';
-      const restartLabel = won ? (this.isFinalOrder ? 'Start another 6-order shift' : 'Next order') : 'Try again';
+      const restartLabel = won ? (this.isFinalOrder ? `Start another ${this.customers.length}-order shift` : 'Next order') : 'Try again';
       restartButton.innerHTML = `${restartLabel} <span class="button-key">Space</span>`;
       restartButton.setAttribute('aria-keyshortcuts', 'Space');
       restartButton.addEventListener('click', () => {
@@ -1039,6 +1057,7 @@ export class Game {
       product.dataset.productKind = kind;
       product.dataset.shelfIndex = String(productConfig.shelfIndex);
       product.dataset.shelfY = String(this.shelfRowsToPixelY(productConfig.shelfIndex));
+      product.style.backgroundImage = `url('./products/${kind}.png')`;
       product.style.width = `${Math.round(productConfig.widthCells * this.config.cellSize)}px`;
       product.style.height = `${Math.round(productConfig.heightCells * this.config.cellSize)}px`;
       product.style.left = `${Math.round(productConfig.xCells * this.config.cellSize)}px`;
@@ -1070,6 +1089,7 @@ export class Game {
       listItem.dataset.productId = productId;
       listItem.setAttribute('data-product-kind', kind);
       listItem.dataset.shelfIndex = product.dataset.shelfIndex || '0';
+      listItem.style.backgroundImage = `url('./products/${kind}.png')`;
 
       const checkMark = document.createElement('span');
       checkMark.className = 'shopping-list-check';
